@@ -5,7 +5,7 @@
 #define ArrayCount(Array) sizeof((Array)) / sizeof(Array[0])
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 
-#define FRAME_TIME_MS 15
+#define FRAME_TIME_MS 16
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
 
@@ -32,3 +32,26 @@ namespace Platform
     float GetTimeInSeconds();
     void  SetHighDPIAwareness();
 }
+
+struct key
+{
+    b32 Down;
+    b32 Changed;
+};
+
+struct input
+{
+    union 
+    {
+        key Keys[6];
+        struct
+        {
+            key TranslateLeft;
+            key TranslateRight;
+            key TranslateDown;
+            key RotateLeft;
+            key RotateRight;
+            key Back;
+        };
+    };
+};

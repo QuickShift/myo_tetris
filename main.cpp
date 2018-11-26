@@ -32,17 +32,82 @@ Init(SDL_Window** Window, SDL_Renderer** Renderer)
 }
 
 static b32
-ProcessInput()
+ProcessInput(input* NewInput, input* OldInput)
 {
+    *NewInput = *OldInput;
     SDL_Event Event;
 
     while(SDL_PollEvent(&Event))
     {
-        if(Event.type == SDL_QUIT)
+        switch(Event.type)
         {
-            return false;
+            case SDL_QUIT:
+            {
+                return false;
+            } break;
+            case SDL_KEYDOWN:
+            {
+                if(Event.key.keysym.sym == SDLK_a)
+                {
+                    NewInput->TranslateLeft.Down = true;
+                }
+                if(Event.key.keysym.sym == SDLK_s)
+                {
+                    NewInput->TranslateDown.Down = true;
+                }
+                if(Event.key.keysym.sym == SDLK_d)
+                {
+                    NewInput->TranslateRight.Down = true;
+                }
+                if(Event.key.keysym.sym == SDLK_LSHIFT)
+                {
+                    NewInput->RotateLeft.Down = true;
+                }
+                if(Event.key.keysym.sym == SDLK_SPACE)
+                {
+                    NewInput->RotateRight.Down = true;
+                }
+                if(Event.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    NewInput->Back.Down = true;
+                }
+            } break;
+            case SDL_KEYUP:
+            {
+                if(Event.key.keysym.sym == SDLK_a)
+                {
+                    NewInput->TranslateLeft.Down = false;
+                }
+                if(Event.key.keysym.sym == SDLK_s)
+                {
+                    NewInput->TranslateDown.Down = false;
+                }
+                if(Event.key.keysym.sym == SDLK_d)
+                {
+                    NewInput->TranslateRight.Down = false;
+                }
+                if(Event.key.keysym.sym == SDLK_LSHIFT)
+                {
+                    NewInput->RotateLeft.Down = false;
+                }
+                if(Event.key.keysym.sym == SDLK_SPACE)
+                {
+                    NewInput->RotateRight.Down = false;
+                }
+                if(Event.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    NewInput->Back.Down = false;
+                }
+            } break;
         }
     }
+
+    for(u32 i = 0; i < ArrayCount(NewInput->Keys); ++i)
+    {
+        NewInput->Keys[i].Changed = NewInput->Keys[i].Down == OldInput->Keys[i].Down ? false : true;
+    }
+
+    *OldInput = *NewInput;
 
     return true;
 }
@@ -60,15 +125,25 @@ main(int ArgCount, char** Args)
         return -1;
     }
 
+    input OldInput = {};
+    input NewInput = {};
     for(;;)
     {
-        SDL_SetRenderDrawColor(Renderer, 255, 255, 255, 255);
-        SDL_RenderClear(Renderer);
-
-        if(!ProcessInput())
+        if(!ProcessInput(&NewInput, &OldInput))
         {
             break;
         }
+
+        if(NewInput.Back.Down)
+        {
+            break;
+        }
+
+        u8 R = NewInput.TranslateLeft.Down ? 255 : 0;
+        u8 G = NewInput.TranslateDown.Down ? 255 : 0;
+        u8 B = NewInput.TranslateRight.Down ? 255 : 0;
+        SDL_SetRenderDrawColor(Renderer, R, G, B, 255);
+        SDL_RenderClear(Renderer);
 
         //GameUpdateAndRender();
         SDL_RenderPresent(Renderer);
