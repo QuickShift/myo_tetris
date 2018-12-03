@@ -32,7 +32,7 @@ Init(SDL_Window** Window, SDL_Renderer** Renderer)
 }
 
 static b32
-ProcessInput(input* NewInput, input* OldInput)
+ProcessInput(game_input* NewInput, game_input* OldInput)
 {
     *NewInput = *OldInput;
     SDL_Event Event;
@@ -125,8 +125,8 @@ main(int ArgCount, char** Args)
         return -1;
     }
 
-    input OldInput = {};
-    input NewInput = {};
+    game_input OldInput = {};
+    game_input NewInput = {};
     for(;;)
     {
         if(!ProcessInput(&NewInput, &OldInput))
@@ -145,7 +145,26 @@ main(int ArgCount, char** Args)
         SDL_SetRenderDrawColor(Renderer, R, G, B, 255);
         SDL_RenderClear(Renderer);
 
-        //GameUpdateAndRender();
+        //GameUpdateAndRender(NewInput);
+        u32 TileSize = 20;
+        u32 TileCountX = WINDOW_WIDTH / TileSize;
+        u32 TileCountY = WINDOW_HEIGHT / TileSize;
+        for(u32 i = 0; i < TileCountX; ++i)
+        {
+            for(u32 j = 0; j < TileCountY; ++j)
+            {
+                SDL_Rect Rectangle = {};
+                Rectangle.x = i * TileSize;
+                Rectangle.y = j * TileSize;
+                Rectangle.w = TileSize;
+                Rectangle.h = TileSize;
+                SDL_SetRenderDrawColor(Renderer, R * i / TileCountX, G * i / TileCountX, B * i / TileCountX, 255);
+                SDL_RenderFillRect(Renderer, &Rectangle);
+                SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
+                SDL_RenderDrawRect(Renderer, &Rectangle);
+            }
+        }
+
         SDL_RenderPresent(Renderer);
         SDL_Delay(FRAME_TIME_MS);
     }

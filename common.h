@@ -5,7 +5,7 @@
 #define ArrayCount(Array) sizeof((Array)) / sizeof(Array[0])
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 
-#define FRAME_TIME_MS 16
+#define FRAME_TIME_MS 15
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
 
@@ -39,7 +39,7 @@ struct key
     b32 Changed;
 };
 
-struct input
+struct game_input
 {
     union 
     {
@@ -55,3 +55,11 @@ struct input
         };
     };
 };
+
+struct game_memory
+{
+};
+
+#define GAME_UPDATE_AND_RENDER(name) void name(game_memory GameMemory, game_input Input)
+typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
+game_update_and_render GameUpdateAndRender;
