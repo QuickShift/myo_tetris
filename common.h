@@ -5,6 +5,10 @@
 #define ArrayCount(Array) sizeof((Array)) / sizeof(Array[0])
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 
+#define Kibibytes(Count) (1024 * (Count))
+#define Mibibytes(Count) (1024 * Kibibytes(Count))
+#define Gibibytes(Count) (1024 * Mibibytes(Count))
+
 #define FRAME_TIME_MS 15
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
@@ -58,8 +62,13 @@ struct game_input
 
 struct game_memory
 {
+    b32 IsInit;
+    u32 MemorySize;
+    void* Memory;
 };
 
-#define GAME_UPDATE_AND_RENDER(name) void name(game_memory GameMemory, game_input Input)
+#include <SDL2/SDL.h>
+
+#define GAME_UPDATE_AND_RENDER(name) void name(game_memory GameMemory, game_input Input, SDL_Renderer* Renderer)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 game_update_and_render GameUpdateAndRender;

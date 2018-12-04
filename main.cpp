@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 #include "common.h"
-#include "renderer.h"
 
 static b32
 Init(SDL_Window** Window, SDL_Renderer** Renderer)
@@ -132,8 +131,18 @@ main(int ArgCount, char** Args)
         printf("ERROR: Failed to initialize TTF.\n%s\n", SDL_GetError());
     }
 
-    TTF_Font* Font;
-    Font = LoadFont("UbuntuMono.ttf", 50);
+    game_memory GameMemory = {};
+    GameMemory.MemorySize = Mibibytes(10);
+    GameMemory.Memory = calloc(1, GameMemory.MemorySize);
+    if(GameMemory.Memory)
+    {
+        GameMemory.IsInit = true;
+    }
+    else
+    {
+        printf("ERROR: Memory allocation failed!\n");
+        Assert(0);
+    }
 
     game_input OldInput = {};
     game_input NewInput = {};
@@ -149,47 +158,13 @@ main(int ArgCount, char** Args)
             break;
         }
 
-        u8 R = NewInput.TranslateLeft.Down ? 255 : 0;
-        u8 G = NewInput.TranslateDown.Down ? 255 : 0;
-        u8 B = NewInput.TranslateRight.Down ? 255 : 0;
-        SDL_SetRenderDrawColor(Renderer, R, G, B, 255);
-        SDL_RenderClear(Renderer);
-
-        //GameUpdateAndRender(NewInput);
-        u32 TileSize = 20;
-        u32 TileCountX = WINDOW_WIDTH / TileSize;
-        u32 TileCountY = WINDOW_HEIGHT / TileSize;
-        for(u32 i = 0; i < TileCountX; ++i)
-        {
-            for(u32 j = 0; j < TileCountY; ++j)
-            {
-                SDL_Rect Rectangle = {};
-                Rectangle.x = i * TileSize;
-                Rectangle.y = j * TileSize;
-                Rectangle.w = TileSize;
-                Rectangle.h = TileSize;
-                SDL_SetRenderDrawColor(Renderer, R * i / TileCountX, G * i / TileCountX, B * i / TileCountX, 255);
-                SDL_RenderFillRect(Renderer, &Rectangle);
-                SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
-                SDL_RenderDrawRect(Renderer, &Rectangle);
-            }
-        }
-
-        SDL_Rect TextRectangle = {};
-        SDL_Texture* TextTexture;
-        TextTexture = CreateTextTexture(&TextRectangle, Renderer, Font, "Test");
-        //SDL_SetTextureBlendMode(TextTexture, SDL_BLENDMODE_BLEND);
-        TextRectangle.x = 100;
-        TextRectangle.y = 100;
-
-        SDL_RenderCopy(Renderer, TextTexture, NULL, &TextRectangle);
-
-        SDL_DestroyTexture(TextTexture);
+        GameUpdateAndRender(GameMemory, NewInput, Renderer);
 
         SDL_RenderPresent(Renderer);
         SDL_Delay(FRAME_TIME_MS);
     }
 
+    free(GameMemory.Memory);
     TTF_Quit();
     SDL_DestroyRenderer(Renderer);
     SDL_DestroyWindow(Window);

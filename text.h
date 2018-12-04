@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL2/SDL_ttf.h>
+#include <stdio.h>
 
 TTF_Font*
 LoadFont(char* FontName, u32 FontSize)
