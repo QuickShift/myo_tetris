@@ -1,7 +1,9 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
 #include "common.h"
+#include "renderer.h"
 
 static b32
 Init(SDL_Window** Window, SDL_Renderer** Renderer)
@@ -125,6 +127,14 @@ main(int ArgCount, char** Args)
         return -1;
     }
 
+    if(TTF_Init() == -1)
+    {
+        printf("ERROR: Failed to initialize TTF.\n%s\n", SDL_GetError());
+    }
+
+    TTF_Font* Font;
+    Font = LoadFont("UbuntuMono.ttf", 50);
+
     game_input OldInput = {};
     game_input NewInput = {};
     for(;;)
@@ -165,10 +175,22 @@ main(int ArgCount, char** Args)
             }
         }
 
+        SDL_Rect TextRectangle = {};
+        SDL_Texture* TextTexture;
+        TextTexture = CreateTextTexture(&TextRectangle, Renderer, Font, "Test");
+        //SDL_SetTextureBlendMode(TextTexture, SDL_BLENDMODE_BLEND);
+        TextRectangle.x = 100;
+        TextRectangle.y = 100;
+
+        SDL_RenderCopy(Renderer, TextTexture, NULL, &TextRectangle);
+
+        SDL_DestroyTexture(TextTexture);
+
         SDL_RenderPresent(Renderer);
         SDL_Delay(FRAME_TIME_MS);
     }
 
+    TTF_Quit();
     SDL_DestroyRenderer(Renderer);
     SDL_DestroyWindow(Window);
 
