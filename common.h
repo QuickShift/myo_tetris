@@ -47,7 +47,7 @@ struct game_input
 {
     union 
     {
-        key Keys[6];
+        key Keys[7];
         struct
         {
             key TranslateLeft;
@@ -56,6 +56,7 @@ struct game_input
             key RotateLeft;
             key RotateRight;
             key Back;
+            key Exit;
         };
     };
 };

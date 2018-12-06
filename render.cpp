@@ -29,11 +29,23 @@ struct menu_scene
 {
     v4 BackgroundColor;
 
-    v4 GameColor;
+    v4 PlayColor;
     v4 InfoColor;
 
-    SDL_Rect GameRectangle;
-    SDL_Rect InfoRectangle;
+    SDL_Rect PlayQuad;
+    SDL_Rect InfoQuad;
+};
+
+struct game_scene
+{
+    u32 TileSize;
+    u32 TileCountX;
+    u32 TileCountY;
+
+    v4 GameQuadColor;
+    v4 GameQuadBorderColor;
+
+    SDL_Rect GameQuad;
 };
 
 struct game_state
@@ -49,6 +61,7 @@ struct game_state
     scene CurrentScene;
 
     menu_scene Menu;
+    game_scene Game;
 };
 
 void
@@ -59,12 +72,18 @@ DrawBackground(v4 Color, SDL_Renderer* Renderer)
 }
 
 void
-DrawTextQuad(char* Text, TTF_Font* Font, v4 Color, SDL_Rect Rectangle, SDL_Renderer* Renderer)
+DrawQuad(v4 Color, v4 BorderColor, SDL_Rect Rectangle, SDL_Renderer* Renderer)
 {
     SDL_SetRenderDrawColor(Renderer, Color.R, Color.G, Color.B, Color.A);
     SDL_RenderFillRect(Renderer, &Rectangle);
-    SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(Renderer, BorderColor.R, BorderColor.G, BorderColor.B, BorderColor.A);
     SDL_RenderDrawRect(Renderer, &Rectangle);
+}
+
+void
+DrawTextQuad(char* Text, TTF_Font* Font, v4 Color, SDL_Rect Rectangle, SDL_Renderer* Renderer)
+{
+    DrawQuad(Color, v4{ 0.0f, 0.0f, 0.0f, 255.0f }, Rectangle, Renderer);
 
     SDL_Rect TextRectangle = {};
     SDL_Texture* TextTexture = CreateTextTexture(&TextRectangle, Renderer, Font, Text);
@@ -82,13 +101,17 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     Assert(GameMemory.IsInit);
     // INIT
     game_state* GameState = (game_state*)GameMemory.Memory;
+
+    menu_scene* Menu = &GameState->Menu;
+    game_scene* Game = &GameState->Game;
+
     if(!GameState->IsInit)
     {
         GameState->IsInit = true;
 
         GameState->Font = LoadFont("UbuntuMono.ttf", 50);
 
-        GameState->TileSize = 20;
+        GameState->TileSize = 40;
         GameState->TileCountX = WINDOW_WIDTH / GameState->TileSize;
         GameState->TileCountY = WINDOW_HEIGHT / GameState->TileSize;
 
@@ -96,44 +119,80 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
         // MENU
         {
-            GameState->Menu.BackgroundColor = v4{ 100.0f, 100.0f, 100.0f, 255.0f };
-            GameState->Menu.GameColor = v4{ 150.0f, 0.0f, 0.0f, 255.0f };
-            GameState->Menu.InfoColor = v4{ 0.0f, 100.0f, 100.0f, 255.0f };
+            Menu->BackgroundColor = v4{ 100.0f, 100.0f, 100.0f, 255.0f };
+            Menu->PlayColor = v4{ 150.0f, 0.0f, 0.0f, 255.0f };
+            Menu->InfoColor = v4{ 0.0f, 100.0f, 100.0f, 255.0f };
 
-            SDL_Rect GameRectangle = {};
-            GameRectangle.x = 400;
-            GameRectangle.y = 300;
-            GameRectangle.w = 200;
-            GameRectangle.h = 100;
-            GameState->Menu.GameRectangle = GameRectangle;
+            SDL_Rect PlayQuad = {};
+            PlayQuad.x = 300;
+            PlayQuad.y = 300;
+            PlayQuad.w = 400;
+            PlayQuad.h = 100;
+            Menu->PlayQuad = PlayQuad;
 
-            SDL_Rect InfoRectangle = {};
-            InfoRectangle.x = 400;
-            InfoRectangle.y = 600;
-            InfoRectangle.w = 200;
-            InfoRectangle.h = 100;
-            GameState->Menu.InfoRectangle = InfoRectangle;
+            SDL_Rect InfoQuad = {};
+            InfoQuad.x = 300;
+            InfoQuad.y = 600;
+            InfoQuad.w = 400;
+            InfoQuad.h = 100;
+            Menu->InfoQuad = InfoQuad;
+        }
+
+        // GAME
+        {
+            Game->TileSize = 40;
+            Game->TileCountX = 10;
+            Game->TileCountY = 20;
+
+            Game->GameQuadColor = v4{ 50.0f, 0.0f, 100.0f, 255.0f };
+            Game->GameQuadBorderColor = v4{ 225.0f, 0.0f, 00.0f, 255.0f };
+
+            SDL_Rect GameQuad = {};
+            GameQuad.x = 399;
+            GameQuad.y = 99;
+            GameQuad.w = Game->TileSize * Game->TileCountX + 2;
+            GameQuad.h = Game->TileSize * Game->TileCountY + 2;
+            Game->GameQuad = GameQuad;
         }
     }
 
-    // UPDATE
-
-    // RENDER
     switch(GameState->CurrentScene)
     {
         case SCENE_Menu:
         {
-            menu_scene* Menu = &GameState->Menu;
-            DrawBackground(Menu->BackgroundColor, Renderer);
+            // UPDATE MENU
+            {
+                if(Input.RotateRight.Down && Input.RotateRight.Changed)
+                {
+                    GameState->CurrentScene = SCENE_Game;
+                }
 
-            DrawTextQuad("Game", GameState->Font, Menu->GameColor, Menu->GameRectangle, Renderer);
-            DrawTextQuad("Info", GameState->Font, Menu->InfoColor, Menu->InfoRectangle, Renderer);
+                if(Input.RotateLeft.Down && Input.RotateLeft.Changed)
+                {
+                    GameState->CurrentScene = SCENE_Info;
+                }
+            }
+
+            // RENDER MENU
+            {
+                DrawBackground(Menu->BackgroundColor, Renderer);
+
+                DrawTextQuad("Play (Space)", GameState->Font, Menu->PlayColor, Menu->PlayQuad, Renderer);
+                DrawTextQuad("Info (Shift)", GameState->Font, Menu->InfoColor, Menu->InfoQuad, Renderer);
+            }
         } break;
         case SCENE_Info:
         {
         } break;
         case SCENE_Game:
         {
+            {
+                if(Input.Back.Down && Input.Back.Changed)
+                {
+                    GameState->CurrentScene = SCENE_Menu;
+                }
+            }
+
             u32 R = Input.TranslateLeft.Down ? 255 : 0;
             u32 G = Input.TranslateDown.Down ? 255 : 0;
             u32 B = Input.TranslateRight.Down ? 255 : 0;
@@ -152,6 +211,10 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                     SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
                     SDL_RenderDrawRect(Renderer, &Rectangle);
                 }
+            }
+
+            {
+                DrawQuad(Game->GameQuadColor, Game->GameQuadBorderColor, Game->GameQuad, Renderer);
             }
         } break;
     }

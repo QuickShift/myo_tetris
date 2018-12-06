@@ -68,9 +68,13 @@ ProcessInput(game_input* NewInput, game_input* OldInput)
                 {
                     NewInput->RotateRight.Down = true;
                 }
-                if(Event.key.keysym.sym == SDLK_ESCAPE)
+                if(Event.key.keysym.sym == SDLK_TAB)
                 {
                     NewInput->Back.Down = true;
+                }
+                if(Event.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    NewInput->Exit.Down = true;
                 }
             } break;
             case SDL_KEYUP:
@@ -95,9 +99,13 @@ ProcessInput(game_input* NewInput, game_input* OldInput)
                 {
                     NewInput->RotateRight.Down = false;
                 }
-                if(Event.key.keysym.sym == SDLK_ESCAPE)
+                if(Event.key.keysym.sym == SDLK_TAB)
                 {
                     NewInput->Back.Down = false;
+                }
+                if(Event.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    NewInput->Exit.Down = false;
                 }
             } break;
         }
@@ -153,7 +161,7 @@ main(int ArgCount, char** Args)
             break;
         }
 
-        if(NewInput.Back.Down)
+        if(NewInput.Exit.Down)
         {
             break;
         }
