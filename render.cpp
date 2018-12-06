@@ -8,6 +8,9 @@
 
 #define STRING_LENGTH 50
 
+#define TILE_COUNT_X 10
+#define TILE_COUNT_Y 20
+
 struct v4
 {
     float R;
@@ -36,16 +39,24 @@ struct menu_scene
     SDL_Rect InfoQuad;
 };
 
+struct tile
+{
+    b32 IsDrawn;
+    u32 X;
+    u32 Y;
+    v4 Color;
+};
+
 struct game_scene
 {
     u32 TileSize;
-    u32 TileCountX;
-    u32 TileCountY;
 
     v4 GameQuadColor;
     v4 GameQuadBorderColor;
 
     SDL_Rect GameQuad;
+
+    tile Tiles[TILE_COUNT_Y][TILE_COUNT_X];
 };
 
 struct game_state
@@ -141,8 +152,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
         // GAME
         {
             Game->TileSize = 40;
-            Game->TileCountX = 10;
-            Game->TileCountY = 20;
 
             Game->GameQuadColor = v4{ 50.0f, 0.0f, 100.0f, 255.0f };
             Game->GameQuadBorderColor = v4{ 225.0f, 0.0f, 00.0f, 255.0f };
@@ -150,9 +159,26 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             SDL_Rect GameQuad = {};
             GameQuad.x = 399;
             GameQuad.y = 99;
-            GameQuad.w = Game->TileSize * Game->TileCountX + 2;
-            GameQuad.h = Game->TileSize * Game->TileCountY + 2;
+            GameQuad.w = Game->TileSize * TILE_COUNT_X + 2;
+            GameQuad.h = Game->TileSize * TILE_COUNT_Y + 2;
             Game->GameQuad = GameQuad;
+
+            for(u32 i = 0; i < TILE_COUNT_Y; ++i)
+            {
+                for(u32 j = 0; j < TILE_COUNT_X; ++j)
+                {
+                    Game->Tiles[i][j] = {};
+                }
+            }
+
+            Game->Tiles[0][0].IsDrawn = true;
+            Game->Tiles[0][0].Color = v4{ 255.0f, 255.0f, 255.0f, 255.0f };
+
+            Game->Tiles[1][1].IsDrawn = true;
+            Game->Tiles[1][1].Color = v4{ 255.0f, 255.0f, 255.0f, 255.0f };
+
+            Game->Tiles[1][0].IsDrawn = true;
+            Game->Tiles[1][0].Color = v4{ 255.0f, 255.0f, 255.0f, 255.0f };
         }
     }
 
@@ -193,28 +219,48 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                 }
             }
 
-            u32 R = Input.TranslateLeft.Down ? 255 : 0;
-            u32 G = Input.TranslateDown.Down ? 255 : 0;
-            u32 B = Input.TranslateRight.Down ? 255 : 0;
-
-            for(u32 i = 0; i < GameState->TileCountX; ++i)
+            // Random stuff; delete later.
             {
-                for(u32 j = 0; j < GameState->TileCountY; ++j)
+                u32 R = Input.TranslateLeft.Down ? 255 : 0;
+                u32 G = Input.TranslateDown.Down ? 255 : 0;
+                u32 B = Input.TranslateRight.Down ? 255 : 0;
+
+                for(u32 i = 0; i < GameState->TileCountX; ++i)
                 {
-                    SDL_Rect Rectangle = {};
-                    Rectangle.x = i * GameState->TileSize;
-                    Rectangle.y = j * GameState->TileSize;
-                    Rectangle.w = GameState->TileSize;
-                    Rectangle.h = GameState->TileSize;
-                    SDL_SetRenderDrawColor(Renderer, R * i / GameState->TileCountX, G * i / GameState->TileCountX, B * i / GameState->TileCountX, 255);
-                    SDL_RenderFillRect(Renderer, &Rectangle);
-                    SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
-                    SDL_RenderDrawRect(Renderer, &Rectangle);
+                    for(u32 j = 0; j < GameState->TileCountY; ++j)
+                    {
+                        SDL_Rect Rectangle = {};
+                        Rectangle.x = i * GameState->TileSize;
+                        Rectangle.y = j * GameState->TileSize;
+                        Rectangle.w = GameState->TileSize;
+                        Rectangle.h = GameState->TileSize;
+                        SDL_SetRenderDrawColor(Renderer, R * i / GameState->TileCountX, G * i / GameState->TileCountX, B * i / GameState->TileCountX, 255);
+                        SDL_RenderFillRect(Renderer, &Rectangle);
+                        SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
+                        SDL_RenderDrawRect(Renderer, &Rectangle);
+                    }
                 }
             }
 
             {
                 DrawQuad(Game->GameQuadColor, Game->GameQuadBorderColor, Game->GameQuad, Renderer);
+
+                SDL_Rect TileRectangle = {};
+                TileRectangle.w = Game->TileSize;
+                TileRectangle.h = Game->TileSize;
+
+                for(u32 i = 0; i < TILE_COUNT_Y; ++i)
+                {
+                    TileRectangle.y = Game->GameQuad.y - 1 + Game->GameQuad.h - (i + 1) * Game->TileSize;
+                    for(u32 j = 0; j < TILE_COUNT_X; ++j)
+                    {
+                        if(Game->Tiles[i][j].IsDrawn)
+                        {
+                            TileRectangle.x = Game->GameQuad.x + 1 + j * Game->TileSize;
+                            DrawQuad(Game->Tiles[i][j].Color, v4{ 255.0f, 0.0f, 0.0f, 255.0f }, TileRectangle, Renderer);
+                        }
+                    }
+                }
             }
         } break;
     }
