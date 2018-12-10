@@ -12,19 +12,3 @@ Platform::SetHighDPIAwareness()
         printf("DPI awareness was not set!\n");
     }
 }
-
-s64 g_PerformanceFrequency = 0;
-
-float
-Platform::GetTimeInSeconds()
-{
-    if(g_PerformanceFrequency == 0){
-        LARGE_INTEGER PerformanceFrequencyResult;
-        QueryPerformanceFrequency(&PerformanceFrequencyResult);
-        g_PerformanceFrequency = PerformanceFrequencyResult.QuadPart;
-    }
-
-    LARGE_INTEGER CurrentPerformanceCounter;
-    QueryPerformanceCounter(&CurrentPerformanceCounter);
-    return (r32)CurrentPerformanceCounter.QuadPart/(r32)g_PerformanceFrequency;
-}

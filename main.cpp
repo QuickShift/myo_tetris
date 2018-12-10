@@ -116,6 +116,8 @@ ProcessInput(game_input* NewInput, game_input* OldInput)
         NewInput->Keys[i].Changed = NewInput->Keys[i].Down == OldInput->Keys[i].Down ? false : true;
     }
 
+    NewInput->Time = SDL_GetTicks();
+
     *OldInput = *NewInput;
 
     return true;

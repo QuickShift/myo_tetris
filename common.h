@@ -9,7 +9,7 @@
 #define Mibibytes(Count) (1024 * Kibibytes(Count))
 #define Gibibytes(Count) (1024 * Mibibytes(Count))
 
-#define FRAME_TIME_MS 15
+#define FRAME_TIME_MS 50
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
 
@@ -33,7 +33,6 @@ typedef double f64;
 
 namespace Platform
 {
-    float GetTimeInSeconds();
     void  SetHighDPIAwareness();
 }
 
@@ -45,6 +44,8 @@ struct key
 
 struct game_input
 {
+    u32 Time;
+
     union 
     {
         key Keys[7];
