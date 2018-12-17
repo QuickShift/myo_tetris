@@ -125,7 +125,6 @@ ProcessInput(game_input* NewInput, game_input* OldInput)
     }
 
     NewInput->Time = SDL_GetTicks();
-    printf("dt = %d ms\n", NewInput->Time - OldInput->Time);
 
     *OldInput = *NewInput;
 
@@ -228,7 +227,6 @@ MyoInputConverter(game_input* NewInput, game_input* OldInput, myo_input* NewMyoI
 
     printf("\nRoll (x) = %f\nPitch (y) = %f\nYaw (z) = %f\n", NewMyoInput->Euler.Roll, NewMyoInput->Euler.Pitch, NewMyoInput->Euler.Yaw);
 
-#if 1
     if(NewMyoInput->Pose == libmyo_pose_fist)
     {
         NewInput->TranslateDown.Down = true;
@@ -276,7 +274,7 @@ MyoInputConverter(game_input* NewInput, game_input* OldInput, myo_input* NewMyoI
     }
 #endif
 
-    if(NewMyoInput->Pose == libmyo_pose_double_tap)
+    if(NewMyoInput->Pose == libmyo_pose_double_tap && NewMyoInput->Euler.Pitch >= 0.75f)
     {
         NewInput->Back.Down = true;
     }
@@ -285,7 +283,6 @@ MyoInputConverter(game_input* NewInput, game_input* OldInput, myo_input* NewMyoI
         NewInput->Back.Down = false;
     }
 
-#endif
     if(NewMyoInput->Pose == libmyo_pose_fingers_spread && NewMyoInput->Euler.Pitch >= 0.75f)
     {
         NewInput->Exit.Down = true;

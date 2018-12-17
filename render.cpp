@@ -562,8 +562,8 @@ ValidPosition(game_scene* Game, tetromino Tetromino)
     for(u32 i = 0; i < 4; ++i)
     {
         if((Tetromino.Tiles[i].X < 0) || (Tetromino.Tiles[i].Y < 0) ||
-           (Tetromino.Tiles[i].X >= TILE_COUNT_X) || (Tetromino.Tiles[i].Y >= TILE_COUNT_Y) ||
-            Game->Tiles[Tetromino.Tiles[i].Y][Tetromino.Tiles[i].X].IsDrawn)
+           (Tetromino.Tiles[i].X >= TILE_COUNT_X) ||// (Tetromino.Tiles[i].Y >= TILE_COUNT_Y) ||
+            ((Tetromino.Tiles[i].Y < TILE_COUNT_Y) && Game->Tiles[Tetromino.Tiles[i].Y][Tetromino.Tiles[i].X].IsDrawn))
         {
             Result = false;
             break;
@@ -618,36 +618,28 @@ CheckForLines(game_scene* Game)
 static void
 RemoveFullLines(game_scene* Game)
 {
-    u32 CurrentLine = Game->FullLineCount - 1;
-    for(int i = Game->LineIndexes[CurrentLine]; i >= 0; --i)
+    s32 CurrentLine = Game->FullLineCount - 1;
+    for(s32 i = Game->FullLineCount - 1; i >= 0; --i)
     {
-        if(CurrentLine < 0)
+        for(int j = Game->LineIndexes[i]; j < TILE_COUNT_Y - 1; ++j)
         {
-            break;
-        }
-
-        if(i == Game->LineIndexes[CurrentLine])
-        {
-            for(int j = i; j < TILE_COUNT_Y - 1; ++j)
+            for(int k = 0; k < TILE_COUNT_X; ++k)
             {
-                for(int k = 0; k < TILE_COUNT_X; ++k)
+                Game->Tiles[j][k] = Game->Tiles[j + 1][k];
+                --Game->Tiles[j][k].Y;
+                if(j == Game->LineIndexes[i])
                 {
-                    Game->Tiles[j][k] = Game->Tiles[j + 1][k];
-                    --Game->Tiles[j][k].Y;
-                    if(j == i)
-                    {
-                        Game->Score += (u32)((Game->Tiles[j][k].Color.R + Game->Tiles[j][k].Color.G + Game->Tiles[j][k].Color.B) / 10.0f);
-                    }
+                    Game->Score += (u32)((Game->Tiles[j][k].Color.R + Game->Tiles[j][k].Color.G + Game->Tiles[j][k].Color.B) / 10.0f);
                 }
             }
-
-            for(int j = 0; j < TILE_COUNT_X; ++j)
-            {
-                Game->Tiles[TILE_COUNT_Y - 1][j] = {}; 
-            }
-            --CurrentLine;
-            ++Game->LineCount;
         }
+
+        for(int j = 0; j < TILE_COUNT_X; ++j)
+        {
+            Game->Tiles[TILE_COUNT_Y - 1][j] = {}; 
+        }
+        --CurrentLine;
+        ++Game->LineCount;
     }
     Game->FullLineCount = 0;
 }
@@ -719,7 +711,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             Info->BackgroundColor = v4{ 50.0f, 50.0f, 70.0f, 255.0f };
 
             SDL_Rect ControlsQuad = {};
-            ControlsQuad.x = 200;
+            ControlsQuad.x = 400;
             ControlsQuad.y = 100;
             ControlsQuad.w = 200;
             ControlsQuad.h = 50;
