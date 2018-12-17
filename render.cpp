@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "text.h"
@@ -25,6 +26,7 @@ enum scene
     SCENE_Menu,
     SCENE_Info,
     SCENE_Game,
+    SCENE_Over,
 
     SCENE_Count,
 };
@@ -48,10 +50,8 @@ struct info_scene
 
     SDL_Rect ControlsQuad;
 
-    SDL_Rect Placeholder1Quad;
-    SDL_Rect Placeholder2Quad;
-    SDL_Rect Placeholder3Quad;
-    SDL_Rect Placeholder4Quad;
+    u32 TextQuadCount;
+    SDL_Rect TextQuads[20];
 };
 
 struct tile
@@ -87,6 +87,7 @@ struct game_scene
     v4 BackgroundColor;
 
     u32 LastTime;
+    u32 LastDownKeyTime;
 
     v4 GameQuadColor;
     v4 GameQuadBorderColor;
@@ -105,6 +106,33 @@ struct game_scene
     b32 TetrominoStop;
     b32 TetrominoIsFalling;
     tetromino Tetromino;
+    piece NextTetromino;
+
+    u32 Score;
+    u32 LineCount;
+
+    char ScoreString[10];
+    char LineCountString[10];
+
+    u32 FullLineCount;
+    u32 LineIndexes[TILE_COUNT_Y];
+};
+
+struct over_scene
+{
+    u32 LastOverTime;
+
+    v4 BackgroundColor;
+
+    SDL_Rect GameOverTextQuad;
+    SDL_Rect ScoreTextQuad;
+    SDL_Rect ScoreCountQuad;
+    SDL_Rect LineCountTextQuad;
+    SDL_Rect LineCountQuad;
+
+    char ScoreString[10];
+    char LineCountString[10];
+
 };
 
 struct game_state
@@ -122,6 +150,7 @@ struct game_state
     menu_scene Menu;
     info_scene Info;
     game_scene Game;
+    over_scene Over;
 };
 
 static void
@@ -216,7 +245,7 @@ DrawPreviewTetromino(tetromino Tetromino, SDL_Rect PreviewRectangle, SDL_Rendere
         {
             CountX = 2;
             CountY = 2;
-            OffsetX = 2;
+            OffsetX = 4;
         } break;
         case PIECE_S:
         {
@@ -558,6 +587,85 @@ ShouldStop(game_scene* Game, tetromino Tetromino)
     return Result;
 }
 
+static void
+CheckForLines(game_scene* Game)
+{
+    Game->FullLineCount = 0;
+    for(int i = 0; i < TILE_COUNT_Y; ++i)
+    {
+        b32 IsFilled = true;
+        for(int j = 0; j < TILE_COUNT_X; ++j)
+        {
+            if(!Game->Tiles[i][j].IsDrawn)
+            {
+                IsFilled = false;
+                break;
+            }
+        }
+
+        if(IsFilled)
+        {
+            Game->LineIndexes[Game->FullLineCount] = i;
+            ++Game->FullLineCount;
+            for(int j = 0; j < TILE_COUNT_X; ++j)
+            {
+                Game->Tiles[i][j].Color = v4{ 255.0f, 255.0f, 255.0f, 255.0f };
+            }
+        }
+    }
+}
+
+static void
+RemoveFullLines(game_scene* Game)
+{
+    u32 CurrentLine = Game->FullLineCount - 1;
+    for(int i = Game->LineIndexes[CurrentLine]; i >= 0; --i)
+    {
+        if(CurrentLine < 0)
+        {
+            break;
+        }
+
+        if(i == Game->LineIndexes[CurrentLine])
+        {
+            for(int j = i; j < TILE_COUNT_Y - 1; ++j)
+            {
+                for(int k = 0; k < TILE_COUNT_X; ++k)
+                {
+                    Game->Tiles[j][k] = Game->Tiles[j + 1][k];
+                    --Game->Tiles[j][k].Y;
+                    if(j == i)
+                    {
+                        Game->Score += (u32)((Game->Tiles[j][k].Color.R + Game->Tiles[j][k].Color.G + Game->Tiles[j][k].Color.B) / 10.0f);
+                    }
+                }
+            }
+
+            for(int j = 0; j < TILE_COUNT_X; ++j)
+            {
+                Game->Tiles[TILE_COUNT_Y - 1][j] = {}; 
+            }
+            --CurrentLine;
+            ++Game->LineCount;
+        }
+    }
+    Game->FullLineCount = 0;
+}
+
+static void
+ResetGame(game_scene* Game)
+{
+    for(u32 i = 0; i < TILE_COUNT_Y; ++i)
+    {
+        for(u32 j = 0; j < TILE_COUNT_X; ++j)
+        {
+            Game->Tiles[i][j].IsDrawn = false;
+        }
+    }
+    Game->Score = 0;
+    Game->LineCount = 0;
+}
+
 GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 {
     Assert(GameMemory.IsInit);
@@ -567,6 +675,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     menu_scene* Menu = &GameState->Menu;
     info_scene* Info = &GameState->Info;
     game_scene* Game = &GameState->Game;
+    over_scene* Over = &GameState->Over;
 
     if(!GameState->IsInit)
     {
@@ -584,23 +693,23 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             Menu->ExitColor = v4{ 150.0f, 0.0f, 0.0f, 255.0f };
 
             SDL_Rect PlayQuad = {};
-            PlayQuad.x = 300;
+            PlayQuad.x = 200;
             PlayQuad.y = 200;
-            PlayQuad.w = 400;
+            PlayQuad.w = 600;
             PlayQuad.h = 100;
             Menu->PlayQuad = PlayQuad;
 
             SDL_Rect InfoQuad = {};
-            InfoQuad.x = 300;
+            InfoQuad.x = 200;
             InfoQuad.y = 450;
-            InfoQuad.w = 400;
+            InfoQuad.w = 600;
             InfoQuad.h = 100;
             Menu->InfoQuad = InfoQuad;
 
             SDL_Rect ExitQuad = {};
-            ExitQuad.x = 300;
+            ExitQuad.x = 200;
             ExitQuad.y = 700;
-            ExitQuad.w = 400;
+            ExitQuad.w = 600;
             ExitQuad.h = 100;
             Menu->ExitQuad = ExitQuad;
         }
@@ -616,33 +725,16 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             ControlsQuad.h = 50;
             Info->ControlsQuad = ControlsQuad;
 
-            SDL_Rect Placeholder1Quad = {};
-            Placeholder1Quad.x = 100;
-            Placeholder1Quad.y = 200;
-            Placeholder1Quad.w = 200;
-            Placeholder1Quad.h = 50;
-            Info->Placeholder1Quad = Placeholder1Quad;
-
-            SDL_Rect Placeholder2Quad = {};
-            Placeholder2Quad.x = 100;
-            Placeholder2Quad.y = 250;
-            Placeholder2Quad.w = 200;
-            Placeholder2Quad.h = 50;
-            Info->Placeholder2Quad = Placeholder2Quad;
-
-            SDL_Rect Placeholder3Quad = {};
-            Placeholder3Quad.x = 100;
-            Placeholder3Quad.y = 300;
-            Placeholder3Quad.w = 200;
-            Placeholder3Quad.h = 50;
-            Info->Placeholder3Quad = Placeholder3Quad;
-
-            SDL_Rect Placeholder4Quad = {};
-            Placeholder4Quad.x = 100;
-            Placeholder4Quad.y = 350;
-            Placeholder4Quad.w = 200;
-            Placeholder4Quad.h = 50;
-            Info->Placeholder4Quad = Placeholder4Quad;
+            Info->TextQuadCount = 15;
+            for(u32 i = 0; i < Info->TextQuadCount; ++i)
+            {
+                SDL_Rect TextQuad = {};
+                TextQuad.x = 100;
+                TextQuad.y = 200 + i * 50;
+                TextQuad.w = 800;
+                TextQuad.h = 50;
+                Info->TextQuads[i] = TextQuad;
+            }
         }
 
         // GAME
@@ -702,6 +794,51 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                     Game->Tiles[i][j] = {};
                 }
             }
+
+            sprintf(Game->ScoreString, "%06u", Game->Score);
+            sprintf(Game->LineCountString, "%04u", Game->LineCount);
+
+            Game->NextTetromino = (piece)(rand() % PIECE_Count);
+        }
+
+        // OVER
+        {
+            Over->BackgroundColor = v4{ 50.0f, 50.0f, 50.0f, 255.0f };
+
+            SDL_Rect GameOverTextQuad = {};
+            GameOverTextQuad.x = 400;
+            GameOverTextQuad.y = 200;
+            GameOverTextQuad.w = 200;
+            GameOverTextQuad.h = 50;
+            Over->GameOverTextQuad = GameOverTextQuad;
+
+            SDL_Rect ScoreTextQuad = {};
+            ScoreTextQuad.x = 400;
+            ScoreTextQuad.y = 400;
+            ScoreTextQuad.w = 200;
+            ScoreTextQuad.h = 50;
+            Over->ScoreTextQuad = ScoreTextQuad;
+
+            SDL_Rect ScoreCountQuad = {};
+            ScoreCountQuad.x = 400;
+            ScoreCountQuad.y = 450;
+            ScoreCountQuad.w = 200;
+            ScoreCountQuad.h = 50;
+            Over->ScoreCountQuad = ScoreCountQuad;
+
+            SDL_Rect LineCountTextQuad = {};
+            LineCountTextQuad.x = 400;
+            LineCountTextQuad.y = 550;
+            LineCountTextQuad.w = 200;
+            LineCountTextQuad.h = 50;
+            Over->LineCountTextQuad = LineCountTextQuad;
+
+            SDL_Rect LineCountQuad = {};
+            LineCountQuad.x = 400;
+            LineCountQuad.y = 600;
+            LineCountQuad.w = 200;
+            LineCountQuad.h = 50;
+            Over->LineCountQuad = LineCountQuad;
         }
     }
 
@@ -711,12 +848,12 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
         {
             // UPDATE MENU
             {
-                if(Input.RotateRight.Down && Input.RotateRight.Changed)
+                if(Input.TranslateRight.Down && Input.TranslateRight.Changed)
                 {
                     GameState->CurrentScene = SCENE_Game;
                 }
 
-                if(Input.RotateLeft.Down && Input.RotateLeft.Changed)
+                if(Input.TranslateLeft.Down && Input.TranslateLeft.Changed)
                 {
                     GameState->CurrentScene = SCENE_Info;
                 }
@@ -726,9 +863,9 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             {
                 DrawBackground(Menu->BackgroundColor, Renderer);
 
-                DrawTextQuad("Play (Space)", GameState->Font, Menu->PlayColor, Menu->PlayQuad, Renderer);
-                DrawTextQuad("Info (Shift)", GameState->Font, Menu->InfoColor, Menu->InfoQuad, Renderer);
-                DrawTextQuad("Exit (Escape)", GameState->Font, Menu->ExitColor, Menu->ExitQuad, Renderer);
+                DrawTextQuad("Play (Wave Out)", GameState->Font, Menu->PlayColor, Menu->PlayQuad, Renderer);
+                DrawTextQuad("Info (Wave In)", GameState->Font, Menu->InfoColor, Menu->InfoQuad, Renderer);
+                DrawTextQuad("Exit (Spread Fingers)", GameState->Font, Menu->ExitColor, Menu->ExitQuad, Renderer);
             }
         } break;
         case SCENE_Info:
@@ -736,11 +873,29 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             {
                 DrawBackground(Info->BackgroundColor, Renderer);
 
-                DrawText("Controls:", GameState->Font, Info->ControlsQuad, Renderer);
-                DrawText("* Placeholder", GameState->Font, Info->Placeholder1Quad, Renderer);
-                DrawText("* Placeholder", GameState->Font, Info->Placeholder2Quad, Renderer);
-                DrawText("* Placeholder", GameState->Font, Info->Placeholder3Quad, Renderer);
-                DrawText("* Placeholder", GameState->Font, Info->Placeholder4Quad, Renderer);
+                DrawText("Controls", GameState->Font, Info->ControlsQuad, Renderer);
+                DrawText("Depending on the flag set in the game",
+                        GameState->Font, Info->TextQuads[0], Renderer);
+                DrawText("code, you can control the game",
+                        GameState->Font, Info->TextQuads[1], Renderer);
+                DrawText("in 2 ways - Myo Armband or Keyboard",
+                        GameState->Font, Info->TextQuads[2], Renderer);
+                DrawText(" ",
+                        GameState->Font, Info->TextQuads[3], Renderer);
+                DrawText("Move left - Wave In (A key)",
+                        GameState->Font, Info->TextQuads[4], Renderer);
+                DrawText("Move right - Wave Out (D key)",
+                        GameState->Font, Info->TextQuads[5], Renderer);
+                DrawText("Rotate - Spread Fingers (Shift key)",
+                        GameState->Font, Info->TextQuads[6], Renderer);
+                DrawText("Move down - Fist (S key)",
+                        GameState->Font, Info->TextQuads[7], Renderer);
+                DrawText("Back - Double Tap (Tab key)",
+                        GameState->Font, Info->TextQuads[8], Renderer);
+                DrawText("Exit game - Spread Fingers with",
+                        GameState->Font, Info->TextQuads[9], Renderer);
+                DrawText("the arm pitched 45 degrees (Escape key)",
+                        GameState->Font, Info->TextQuads[10], Renderer);
             }
 
             {
@@ -757,20 +912,21 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                 DrawBackground(Game->BackgroundColor, Renderer);
 
                 DrawText("Score:", GameState->Font, Game->ScoreTextQuad, Renderer);
-                DrawText("000000", GameState->Font, Game->ScoreCountQuad, Renderer);
+                DrawText(Game->ScoreString, GameState->Font, Game->ScoreCountQuad, Renderer);
 
                 DrawText("Line Count:", GameState->Font, Game->LineCountTextQuad, Renderer);
-                DrawText("0000", GameState->Font, Game->LineCountQuad, Renderer);
+                DrawText(Game->LineCountString, GameState->Font, Game->LineCountQuad, Renderer);
 
                 DrawQuad(Game->NextTetrominoQuadColor, Game->NextTetrominoQuadBorderColor, Game->NextTetrominoQuad, Renderer);
 
-                DrawPreviewTetromino(CreateTetromino(PIECE_Z), Game->NextTetrominoQuad, Renderer);
+                DrawPreviewTetromino(CreateTetromino(Game->NextTetromino), Game->NextTetrominoQuad, Renderer);
             }
 
             {
                 if(Input.Back.Down && Input.Back.Changed)
                 {
                     GameState->CurrentScene = SCENE_Menu;
+                    ResetGame(Game);
                 }
             }
 
@@ -792,18 +948,36 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
                 if(!Game->TetrominoIsFalling)
                 {
+                    Game->LastTime = Input.Time;
+                    if(Game->FullLineCount)
+                    {
+                        RemoveFullLines(Game);
+                        sprintf(Game->ScoreString, "%06u", Game->Score);
+                        sprintf(Game->LineCountString, "%04u", Game->LineCount);
+                    }
                     Game->TetrominoIsFalling = true;
-                    Game->Tetromino = CreateTetromino(PIECE_I);
+                    Game->Tetromino = CreateTetromino(Game->NextTetromino);
+                    Game->NextTetromino = (piece)(rand() % PIECE_Count);
+
+                    if(!ValidPosition(Game, Game->Tetromino))
+                    {
+                        sprintf(Over->ScoreString, "%06u", Game->Score);
+                        sprintf(Over->LineCountString, "%04u", Game->LineCount);
+                        Over->LastOverTime = Input.Time;
+                        GameState->CurrentScene = SCENE_Over;
+                        ResetGame(Game);
+                    }
                 }
 
                 {
                     tetromino Tetromino = Game->Tetromino;
-                    if(Input.TranslateDown.Down)// && Input.TranslateDown.Changed)
+                    if(Input.TranslateDown.Down && Input.Time > Game->LastDownKeyTime + 70)// && Input.TranslateDown.Changed)
                     {
                         for(u32 i = 0; i < 4; ++i)
                         {
                             --Tetromino.Tiles[i].Y;
                         }
+                        Game->LastDownKeyTime = Input.Time;
                     }
 
                     if(Input.TranslateLeft.Down && Input.TranslateLeft.Changed)
@@ -850,7 +1024,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                         }
                     }
 
-                    if(Input.Time > Game->LastTime + 1000)
+                    if(!Input.TranslateDown.Down && Input.Time > Game->LastTime + 1000)
                     {
                         for(u32 i = 0; i < 4; ++i)
                         {
@@ -874,6 +1048,8 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
                         Game->TetrominoStop = false;
                         Game->TetrominoIsFalling = false;
+
+                        CheckForLines(Game);
                     }
                     else
                     {
@@ -888,6 +1064,22 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                         DrawTile(Game->Tetromino.Tiles[i], Game->GameQuad, Renderer);
                     }
                 }
+            }
+        } break;
+        case SCENE_Over:
+        {
+            DrawBackground(Over->BackgroundColor, Renderer);
+
+            DrawText("Game Over!", GameState->Font, Over->GameOverTextQuad, Renderer);
+
+            DrawText("Score:", GameState->Font, Over->ScoreTextQuad, Renderer);
+            DrawText(Over->ScoreString, GameState->Font, Over->ScoreCountQuad, Renderer);
+
+            DrawText("Line Count:", GameState->Font, Over->LineCountTextQuad, Renderer);
+            DrawText(Over->LineCountString, GameState->Font, Over->LineCountQuad, Renderer);
+            if(Input.Time > Over->LastOverTime + 2000)
+            {
+                GameState->CurrentScene = SCENE_Menu;
             }
         } break;
     }
