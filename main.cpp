@@ -6,7 +6,6 @@
 
 #include "common.h"
 
-#define USE_MYO 0
 #if USE_MYO
 #include <myo/libmyo.h>
 #include <math.h>

@@ -1,5 +1,7 @@
 @echo off
 
+set Defines=-DUSE_MYO=0
+
 IF NOT EXIST build mkdir build
 pushd build
 
