@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "render_data.h"
+
 #include "common.h"
 
 #if USE_MYO
@@ -39,6 +41,48 @@ Init(SDL_Window** Window, SDL_Renderer** Renderer)
     return true;
 }
 
+static TTF_Font*
+LoadFont(char* FontName, u32 FontSize)
+{
+    TTF_Font* Result;
+    Result = TTF_OpenFont(FontName, FontSize);
+    if(!Result)
+    {
+        printf("ERROR: Count not create font!\n%s\n", SDL_GetError());
+        return 0;
+    }
+    return Result;
+}
+
+static SDL_Texture*
+CreateTextTexture(SDL_Rect* TextRectangle, SDL_Renderer* Renderer, TTF_Font* Font, char* Text)
+{
+    SDL_Surface* TextSurface;
+
+    SDL_Color FontColor = {};
+    FontColor.a = 255;
+    FontColor.r = 255;
+    FontColor.g = 255;
+    FontColor.b = 255;
+
+    TextSurface = TTF_RenderUTF8_Blended(Font, Text, FontColor);
+    if(!TextSurface)
+    {
+        printf("ERROR: Could not create TextSurface\n%s\n", SDL_GetError());
+        return 0;
+    }
+
+    if(TextRectangle)
+    {
+        TextRectangle->w = TextSurface->w;
+        TextRectangle->h = TextSurface->h;
+    }
+
+    SDL_Texture* TextTexture;
+    TextTexture = SDL_CreateTextureFromSurface(Renderer, TextSurface);
+    SDL_FreeSurface(TextSurface);
+    return TextTexture;
+}
 static b32
 ProcessInput(game_input* NewInput, game_input* OldInput)
 {
@@ -124,6 +168,7 @@ ProcessInput(game_input* NewInput, game_input* OldInput)
     }
 
     NewInput->Time = SDL_GetTicks();
+    printf("dt = %d ms\n", NewInput->Time - OldInput->Time);
 
     *OldInput = *NewInput;
 
@@ -302,6 +347,62 @@ MyoInputConverter(game_input* NewInput, game_input* OldInput, myo_input* NewMyoI
 }
 #endif
 
+static void
+DrawBackground(SDL_Renderer* Renderer, v4 Color)
+{
+    SDL_SetRenderDrawColor(Renderer, Color.R, Color.G, Color.B, Color.A);
+    SDL_RenderClear(Renderer);
+}
+
+static void
+DrawQuad(SDL_Renderer* Renderer, quad Quad)
+{
+    v4 Color = Quad.RectangleColor;
+    v4 Border = Quad.BorderColor;
+    SDL_Rect Rectangle = {};
+    Rectangle.x = Quad.Rectangle.X;
+    Rectangle.y = Quad.Rectangle.Y;
+    Rectangle.w = Quad.Rectangle.W;
+    Rectangle.h = Quad.Rectangle.H;
+
+    SDL_SetRenderDrawColor(Renderer, Color.R, Color.G, Color.B, Color.A);
+    SDL_RenderFillRect(Renderer, &Rectangle);
+    SDL_SetRenderDrawColor(Renderer, Border.R, Border.G, Border.B, Border.A);
+    SDL_RenderDrawRect(Renderer, &Rectangle);
+}
+
+static void
+DrawString(SDL_Renderer* Renderer, TTF_Font* Font, string String)
+{
+    SDL_Rect DrawnRectangle = {};
+    SDL_Texture* TextTexture = CreateTextTexture(&DrawnRectangle, Renderer, Font, String.String);
+
+    DrawnRectangle.x = String.Rectangle.X + (String.Rectangle.W - DrawnRectangle.w) / 2.0f;
+    DrawnRectangle.y = String.Rectangle.Y + (String.Rectangle.H - DrawnRectangle.h) / 2.0f;
+
+    SDL_RenderCopy(Renderer, TextTexture, NULL, &DrawnRectangle);
+    SDL_DestroyTexture(TextTexture);
+}
+
+static void
+DrawRenderData(render_data* RenderData, SDL_Renderer* Renderer, TTF_Font* Font)
+{
+    DrawBackground(Renderer, RenderData->BackgroundColor);
+
+    for(int i = 0; i < RenderData->QuadCount; ++i)
+    {
+        DrawQuad(Renderer, RenderData->Quads[i]);
+    }
+
+    for(int i = 0; i < RenderData->StringCount; ++i)
+    {
+        DrawString(Renderer, Font, RenderData->Strings[i]);
+    }
+
+    RenderData->QuadCount = 0;
+    RenderData->StringCount = 0;
+}
+
 int
 main(int ArgCount, char** Args)
 {
@@ -319,6 +420,8 @@ main(int ArgCount, char** Args)
     {
         printf("ERROR: Failed to initialize TTF.\n%s\n", SDL_GetError());
     }
+
+    TTF_Font* Font = LoadFont("UbuntuMono.ttf", 50);
 
     srand(time(NULL));
 
@@ -378,6 +481,8 @@ main(int ArgCount, char** Args)
     myo_input OldMyoInput = {};
 #endif
 
+    render_data RenderData = {};
+
     game_input OldInput = {};
     game_input NewInput = {};
     for(;;)
@@ -399,7 +504,9 @@ main(int ArgCount, char** Args)
             break;
         }
 
-        GameUpdateAndRender(GameMemory, NewInput, Renderer);
+        GameUpdateAndRender(&GameMemory, &NewInput, &RenderData);
+
+        DrawRenderData(&RenderData, Renderer, Font);
 
         SDL_RenderPresent(Renderer);
 #if USE_MYO == 0
@@ -421,6 +528,7 @@ main(int ArgCount, char** Args)
 #endif
 
     free(GameMemory.Memory);
+    TTF_CloseFont(Font);
     TTF_Quit();
     SDL_DestroyRenderer(Renderer);
     SDL_DestroyWindow(Window);

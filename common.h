@@ -69,8 +69,10 @@ struct game_memory
     void* Memory;
 };
 
-#include <SDL2/SDL.h>
-
-#define GAME_UPDATE_AND_RENDER(name) void name(game_memory GameMemory, game_input Input, SDL_Renderer* Renderer)
-typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
-game_update_and_render GameUpdateAndRender;
+struct v4
+{
+    float R;
+    float G;
+    float B;
+    float A;
+};
