@@ -28,19 +28,19 @@ InitInfoScene(info_scene* Info)
 void
 RenderInfoScene(render_data* RenderData, info_scene* Info)
 {
-    PushBackground(Info->BackgroundColor);
+    PushBackground(RenderData, Info->BackgroundColor);
 
-    PushText("Controls", Info->ControlsRectangle);
+    PushText(RenderData, "Controls", Info->ControlsRectangle);
 
-    PushText("Depending on the flag set in the game", Info->TextRectangles[0]);
-    PushText("code, you can control the game", Info->TextRectangles[1]);
-    PushText("in 2 ways - Myo Armband or Keyboard", Info->TextRectangles[2]);
-    PushText(" ", Info->TextRectangles[3]);
-    PushText("Move left - Wave In (A key)", Info->TextRectangles[4]);
-    PushText("Move right - Wave Out (D key)", Info->TextRectangles[5]);
-    PushText("Rotate - Spread Fingers (Shift key)", Info->TextRectangles[6]);
-    PushText("Move down - Fist (S key)", Info->TextRectangles[7]);
-    PushText("Back - Double Tap (Tab key)", Info->TextRectangles[8]);
-    PushText("Exit game - Spread Fingers with", Info->TextRectangles[9]);
-    PushText("the arm pitched 45 degrees (Escape key)", Info->TextRectangles[10]);
+    PushText(RenderData, "Depending on the flag set in the game", Info->TextRectangles[0]);
+    PushText(RenderData, "code, you can control the game", Info->TextRectangles[1]);
+    PushText(RenderData, "in 2 ways - Myo Armband or Keyboard", Info->TextRectangles[2]);
+    PushText(RenderData, " ", Info->TextRectangles[3]);
+    PushText(RenderData, "Move left - Wave In (A key)", Info->TextRectangles[4]);
+    PushText(RenderData, "Move right - Wave Out (D key)", Info->TextRectangles[5]);
+    PushText(RenderData, "Rotate - Spread Fingers (Shift key)", Info->TextRectangles[6]);
+    PushText(RenderData, "Move down - Fist (S key)", Info->TextRectangles[7]);
+    PushText(RenderData, "Back - Double Tap (Tab key)", Info->TextRectangles[8]);
+    PushText(RenderData, "Exit game - Spread Fingers with", Info->TextRectangles[9]);
+    PushText(RenderData, "the arm pitched 45 degrees (Escape key)", Info->TextRectangles[10]);
 }

@@ -44,13 +44,13 @@ InitOverScene(over_scene* Over)
 void
 RenderOverScene(render_data* RenderData, over_scene* Over)
 {
-    PushBackground(Over->BackgroundColor);
+    PushBackground(RenderData, Over->BackgroundColor);
 
-    PushText("Game Over!", Over->GameOverTextRectangle);
+    PushText(RenderData, "Game Over!", Over->GameOverTextRectangle);
 
-    PushText("Score:", Over->ScoreTextRectangle);
-    PushText(Over->ScoreString, Over->ScoreCountRectangle);
+    PushText(RenderData, "Score:", Over->ScoreTextRectangle);
+    PushText(RenderData, Over->ScoreString, Over->ScoreCountRectangle);
 
-    PushText("Line Count:", Over->LineCountTextRectangle);
-    PushText(Over->LineCountString, Over->LineCountRectangle);
+    PushText(RenderData, "Line Count:", Over->LineCountTextRectangle);
+    PushText(RenderData, Over->LineCountString, Over->LineCountRectangle);
 }

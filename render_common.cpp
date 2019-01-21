@@ -3,13 +3,13 @@
 #include "render_common.h"
 
 void
-_PushBackgroundColor(render_data* RenderData, v4 Color)
+PushBackground(render_data* RenderData, v4 Color)
 {
     RenderData->BackgroundColor = Color;
 }
 
 void
-_PushQuad(render_data* RenderData, v4 Color, v4 BorderColor, rect Rectangle)
+PushQuad(render_data* RenderData, v4 Color, v4 BorderColor, rect Rectangle)
 {
     quad Quad = {};
     Quad.Rectangle = Rectangle;
@@ -19,7 +19,7 @@ _PushQuad(render_data* RenderData, v4 Color, v4 BorderColor, rect Rectangle)
 }
 
 void
-_PushText(render_data* RenderData, char* Text, rect Rectangle)
+PushText(render_data* RenderData, char* Text, rect Rectangle)
 {
     string String = {};
     Assert(strlen(Text) < MAX_STRING_LENGTH);
@@ -29,8 +29,8 @@ _PushText(render_data* RenderData, char* Text, rect Rectangle)
 }
 
 void
-_PushTextQuad(render_data* RenderData, char* Text, v4 Color, rect Rectangle)
+PushTextQuad(render_data* RenderData, char* Text, v4 Color, rect Rectangle)
 {
-    _PushQuad(RenderData, Color, v4{ 0.0f, 0.0f, 0.0f, 255.0f }, Rectangle);
-    _PushText(RenderData, Text, Rectangle);
+    PushQuad(RenderData, Color, v4{ 0.0f, 0.0f, 0.0f, 255.0f }, Rectangle);
+    PushText(RenderData, Text, Rectangle);
 }

@@ -366,7 +366,7 @@ _PushPreviewTetromino(render_data* RenderData, tetromino Tetromino, rect Preview
         TileRectangle.H = TILE_SIZE;
 
         v4 TileBorderColor = { 255.0f, 255.0f, 255.0f, 255.0f };
-        PushQuad(Tetromino.Tiles[i].Color, TileBorderColor, TileRectangle);
+        PushQuad(RenderData, Tetromino.Tiles[i].Color, TileBorderColor, TileRectangle);
     }
 }
 
@@ -381,25 +381,25 @@ _PushTile(render_data* RenderData, tile Tile, rect GameRectangle)
     TileRectangle.H = TILE_SIZE;
 
     v4 TileBorderColor = { 255.0f, 255.0f, 255.0f, 255.0f };
-    PushQuad(Tile.Color, TileBorderColor, TileRectangle);
+    PushQuad(RenderData, Tile.Color, TileBorderColor, TileRectangle);
 }
 
 void
 RenderGameScene(render_data* RenderData, game_scene* Game)
 {
-    PushBackground(Game->BackgroundColor);
+    PushBackground(RenderData, Game->BackgroundColor);
 
-    PushText("Score:", Game->ScoreTextRectangle);
-    PushText(Game->ScoreString, Game->ScoreCountRectangle);
+    PushText(RenderData, "Score:", Game->ScoreTextRectangle);
+    PushText(RenderData, Game->ScoreString, Game->ScoreCountRectangle);
 
-    PushText("Line Count:", Game->LineCountTextRectangle);
-    PushText(Game->LineCountString, Game->LineCountRectangle);
+    PushText(RenderData, "Line Count:", Game->LineCountTextRectangle);
+    PushText(RenderData, Game->LineCountString, Game->LineCountRectangle);
 
-    PushQuad(Game->NextTetrominoRectangleColor, Game->NextTetrominoRectangleBorderColor, Game->NextTetrominoRectangle);
+    PushQuad(RenderData, Game->NextTetrominoRectangleColor, Game->NextTetrominoRectangleBorderColor, Game->NextTetrominoRectangle);
 
     PushPreviewTetromino(Game->NextTetromino, Game->NextTetrominoRectangle);
 
-    PushQuad(Game->GameRectangleColor, Game->GameRectangleBorderColor, Game->GameRectangle);
+    PushQuad(RenderData, Game->GameRectangleColor, Game->GameRectangleBorderColor, Game->GameRectangle);
 
     for(u32 i = 0; i < TILE_COUNT_Y; ++i)
     {

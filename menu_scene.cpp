@@ -33,9 +33,9 @@ InitMenuScene(menu_scene* Menu)
 void
 RenderMenuScene(render_data* RenderData, menu_scene* Menu)
 {
-    PushBackground(Menu->BackgroundColor);
+    PushBackground(RenderData, Menu->BackgroundColor);
 
-    PushTextQuad("Play (Wave Out)", Menu->PlayColor, Menu->PlayRectangle);
-    PushTextQuad("Info (Wave In)", Menu->InfoColor, Menu->InfoRectangle);
-    PushTextQuad("Exit (Spread Fingers)", Menu->ExitColor, Menu->ExitRectangle);
+    PushTextQuad(RenderData, "Play (Wave Out)", Menu->PlayColor, Menu->PlayRectangle);
+    PushTextQuad(RenderData, "Info (Wave In)", Menu->InfoColor, Menu->InfoRectangle);
+    PushTextQuad(RenderData, "Exit (Spread Fingers)", Menu->ExitColor, Menu->ExitRectangle);
 }
