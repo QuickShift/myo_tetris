@@ -168,7 +168,6 @@ ProcessInput(game_input* NewInput, game_input* OldInput)
     }
 
     NewInput->Time = SDL_GetTicks();
-    printf("dt = %d ms\n", NewInput->Time - OldInput->Time);
 
     *OldInput = *NewInput;
 
@@ -269,7 +268,7 @@ MyoInputConverter(game_input* NewInput, game_input* OldInput, myo_input* NewMyoI
     NewMyoInput->Euler.Pitch = fabs(SinP) >= 1 ? copysign(M_PI / 2.0f, SinP) : asin(SinP);
     NewMyoInput->Euler.Yaw = atan2(SinY_CosP, CosY_CosP);
 
-    printf("\nRoll (x) = %f\nPitch (y) = %f\nYaw (z) = %f\n", NewMyoInput->Euler.Roll, NewMyoInput->Euler.Pitch, NewMyoInput->Euler.Yaw);
+    // printf("\nRoll (x) = %f\nPitch (y) = %f\nYaw (z) = %f\n", NewMyoInput->Euler.Roll, NewMyoInput->Euler.Pitch, NewMyoInput->Euler.Yaw);
 
     if(NewMyoInput->Pose == libmyo_pose_fist)
     {
