@@ -10,7 +10,7 @@ The Myo API can be used in two different ways:
 * OO: you have to inherit from `DeviceListener` class and implement its methods to receive the input.
 * C-style/function API: it's a low level API, so you have to do the polling yourself. That means that you either write some threaded code yourself (and don't skip over input) or you don't poll the whole time and lose some input information.
 
-I chose the second API style, but implemented it sloppily - didn't create a separate thread for the poll. Instead spent a small part of the frame waiting for the input. It's dirty and incorrect and potentially skips over some of the inputs, but at the time the tradeoff seemed to be worth it. Also, the game itself has got a couple of bugs that I didn't bother searching for and fixing.
+In this project, the 2nd API style with no threading was used. It was faster to implement, even though the input became less reliable. Other than that, a couple of bugs are still hiding somewhere in the code.
 
 Done using SDL 2.0.9 and Myo SDK 0.9.0.
 
